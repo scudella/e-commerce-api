@@ -61,12 +61,12 @@ const ProductSchema = new mongoose.Schema(
       default: 0,
     },
     user: {
-      type: mongoose.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  {timestamps: true, toJSON: {virtuals: true}, toObject: {virtuals: true}},
 );
 
 ProductSchema.virtual('reviews', {
@@ -76,10 +76,12 @@ ProductSchema.virtual('reviews', {
   justOne: false,
 });
 
-ProductSchema.pre('remove', async function (next) {
-  await this.model('Review').deleteMany({ product: this._id });
-});
+ProductSchema.pre(
+  'deleteOne',
+  {document: true, query: false},
+  async function () {
+    await this.model('Review').deleteMany({product: this._id});
+  },
+);
 
-// in the virtual can also include:
-// match: {rating: 5}
 module.exports = mongoose.model('Product', ProductSchema);

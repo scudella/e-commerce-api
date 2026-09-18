@@ -1,7 +1,7 @@
-const { StatusCodes } = require('http-status-codes');
+const {StatusCodes} = require('http-status-codes');
 const errorHandlerMiddleware = (err, req, res, next) => {
   let customError = {
-    // set default
+    // set default status code and message
     statusCode: err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
     msg: err.message || 'Something went wrong try again later',
   };
@@ -9,20 +9,22 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     customError.msg = Object.values(err.errors)
       .map((item) => item.message)
       .join(',');
-    customError.statusCode = 400;
+    customError.statusCode = StatusCodes.BAD_REQUEST;
   }
+  // Mongoose Duplicate Key Error (e.g. unique email constraint)
   if (err.code && err.code === 11000) {
     customError.msg = `Duplicate value entered for ${Object.keys(
-      err.keyValue
+      err.keyValue,
     )} field, please choose another value`;
-    customError.statusCode = 400;
+    customError.statusCode = StatusCodes.BAD_REQUEST;
   }
+  // Mongoose Cast Error (e.g. invalid MongoDB ObjectId format)
   if (err.name === 'CastError') {
     customError.msg = `No item found with id : ${err.value}`;
-    customError.statusCode = 404;
+    customError.statusCode = StatusCodes.NOT_FOUND;
   }
 
-  return res.status(customError.statusCode).json({ msg: customError.msg });
+  return res.status(customError.statusCode).json({msg: customError.msg});
 };
 
 module.exports = errorHandlerMiddleware;

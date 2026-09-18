@@ -1,25 +1,25 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
-const { StatusCodes } = require('http-status-codes');
+const {StatusCodes} = require('http-status-codes');
 const CustomError = require('../errors');
-const { checkPermissions } = require('../utils');
+const {checkPermissions} = require('../utils');
 
-// create order
-
-const fakeStripeAPI = async ({ amount, currency }) => {
+// Mock Stripe API call (replace with actual stripe package integration if needed)
+const fakeStripeAPI = async ({amount, currency}) => {
   const client_secret = 'someRandomValue';
-  return { client_secret, amount };
+  return {client_secret, amount};
 };
 
+// create order
 const createOrder = async (req, res) => {
-  const { items: cartItems, tax, shippingFee } = req.body;
+  const {items: cartItems, tax, shippingFee} = req.body;
 
   if (!cartItems || cartItems.length < 1) {
     throw new CustomError.BadRequestError('No cart items provided');
   }
-  if (!tax || !shippingFee) {
+  if (tax === undefined || shippingFee === undefined) {
     throw new CustomError.BadRequestError(
-      'Please provide tax and shipping fee'
+      'Please provide tax and shipping fee',
     );
   }
 
@@ -27,14 +27,14 @@ const createOrder = async (req, res) => {
   let subtotal = 0;
 
   for (const item of cartItems) {
-    const dbProduct = await Product.findOne({ _id: item.product });
+    const dbProduct = await Product.findOne({_id: item.product});
     if (!dbProduct) {
       throw new CustomError.NotFoundError(
-        `no product with id : ${item.product}`
+        `no product with id : ${item.product}`,
       );
     }
 
-    const { name, price, image, _id } = dbProduct;
+    const {name, price, image, _id} = dbProduct;
     const singleOrderItem = {
       amount: item.amount,
       name,
@@ -44,7 +44,7 @@ const createOrder = async (req, res) => {
     };
 
     // add item to order
-    orderItems = [...orderItems, singleOrderItem];
+    orderItems.push(singleOrderItem);
     // calculate subtotal
     subtotal += item.amount * price;
   }
@@ -67,19 +67,19 @@ const createOrder = async (req, res) => {
   });
   res
     .status(StatusCodes.CREATED)
-    .json({ order, clientSecret: order.clientSecret });
+    .json({order, clientSecret: order.clientSecret});
 };
 
 // get all orders
 const getAllOrders = async (req, res) => {
   const orders = await Order.find({});
-  res.status(StatusCodes.OK).json({ orders, count: orders.length });
+  res.status(StatusCodes.OK).json({orders, count: orders.length});
 };
 
 // get single order
 const getSingleOrder = async (req, res) => {
-  const { id: orderId } = req.params;
-  const order = await Order.findOne({ _id: orderId });
+  const {id: orderId} = req.params;
+  const order = await Order.findOne({_id: orderId});
 
   if (!order) {
     throw new CustomError.NotFoundError(`No order with id: ${orderId}`);
@@ -87,22 +87,22 @@ const getSingleOrder = async (req, res) => {
 
   checkPermissions(req.user, order.user);
 
-  res.status(StatusCodes.OK).json({ order });
+  res.status(StatusCodes.OK).json({order});
 };
 
 // get current user orders
 const getCurrentUserOrders = async (req, res) => {
-  const orders = await Order.find({ user: req.user.userId });
+  const orders = await Order.find({user: req.user.userId});
 
-  res.status(StatusCodes.OK).json({ orders, count: orders.length });
+  res.status(StatusCodes.OK).json({orders, count: orders.length});
 };
 
-// update order
+// update order status
 const updateOrder = async (req, res) => {
-  const { id: orderId } = req.params;
-  const { paymentIntentId } = req.body;
+  const {id: orderId} = req.params;
+  const {paymentIntentId} = req.body;
 
-  const order = await Order.findOne({ _id: orderId });
+  const order = await Order.findOne({_id: orderId});
 
   if (!order) {
     throw new CustomError.NotFoundError(`no order with id : ${orderId}`);
@@ -115,7 +115,7 @@ const updateOrder = async (req, res) => {
 
   await order.save();
 
-  res.status(StatusCodes.OK).json({ order });
+  res.status(StatusCodes.OK).json({order});
 };
 
 module.exports = {

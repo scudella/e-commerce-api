@@ -20,25 +20,25 @@ const ReviewSchema = new mongoose.Schema(
       maxlength: [1000, 'Comment allow a maximum of 1000 characters'],
     },
     user: {
-      type: mongoose.Schema.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
     product: {
-      type: mongoose.Schema.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',
       required: true,
     },
   },
-  { timestamps: true }
+  {timestamps: true},
 );
 
-ReviewSchema.index({ product: 1, user: 1 }, { unique: true });
+ReviewSchema.index({product: 1, user: 1}, {unique: true});
 
-// instead of methods, statics
+// Static method to recalculate product rating stats
 ReviewSchema.statics.calculateAverageRating = async function (productId) {
   const result = await this.aggregate([
-    { $match: { product: productId } },
+    {$match: {product: productId}},
     {
       $group: {
         _id: '$product',
@@ -51,22 +51,24 @@ ReviewSchema.statics.calculateAverageRating = async function (productId) {
       },
     },
   ]);
-  // console.log(result);
+
   try {
-    await this.model('Product').findOneAndUpdate(productId, {
-      averageRating: result[0]?.averageRating || 0,
+    // ✅ Use explicit query filter { _id: productId } or findByIdAndUpdate
+    await this.model('Product').findByIdAndUpdate(productId, {
+      averageRating: Math.ceil(result[0]?.averageRating || 0),
       numOfReviews: result[0]?.numOfReviews || 0,
-    }); //optional chaining. See js nuggets
+    });
   } catch (error) {
-    console.log(error);
+    console.log('Error updating average rating:', error);
   }
 };
 
-ReviewSchema.post('save', async function () {
-  await this.constructor.calculateAverageRating(this.product);
-});
-ReviewSchema.post('remove', async function () {
-  await this.constructor.calculateAverageRating(this.product);
-});
+ReviewSchema.post(
+  'deleteOne',
+  {document: true, query: false},
+  async function () {
+    await this.constructor.calculateAverageRating(this.product);
+  },
+);
 
 module.exports = mongoose.model('Review', ReviewSchema);

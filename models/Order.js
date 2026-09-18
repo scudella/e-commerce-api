@@ -1,16 +1,19 @@
 const mongoose = require('mongoose');
 
-const SingleOrderItemSchema = mongoose.Schema({
-  name: { type: String, required: true },
-  image: { type: String, required: true },
-  price: { type: Number, required: true },
-  amount: { type: Number, required: true },
-  product: {
-    type: mongoose.Schema.ObjectId,
-    ref: 'Product',
-    required: true,
+const SingleOrderItemSchema = new mongoose.Schema(
+  {
+    name: {type: String, required: true},
+    image: {type: String, required: true},
+    price: {type: Number, required: true},
+    amount: {type: Number, required: true},
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true,
+    },
   },
-});
+  {_id: false}, // Set to false if order items don't need unique ObjectIds
+);
 
 const OrderSchema = new mongoose.Schema(
   {
@@ -37,7 +40,7 @@ const OrderSchema = new mongoose.Schema(
       default: 'pending',
     },
     user: {
-      type: mongoose.Schema.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
@@ -49,7 +52,7 @@ const OrderSchema = new mongoose.Schema(
       type: String,
     },
   },
-  { timestamps: true }
+  {timestamps: true},
 );
 
 module.exports = mongoose.model('Order', OrderSchema);
