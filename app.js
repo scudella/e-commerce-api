@@ -51,9 +51,8 @@ app.use(fileUpload());
 // Sanitize MongoDB operators from body/params/query
 app.use(mongoSanitize());
 
-if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('tiny'));
-}
+const logFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use(morgan(logFormat));
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
