@@ -36,7 +36,10 @@ app.set('trust proxy', 1);
 app.use(
   rateLimiter({
     windowMs: 15 * 60 * 1000,
-    max: 60,
+    limit: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    ipv6Subnet: 56,
   }),
 );
 app.use(helmet());
@@ -61,7 +64,7 @@ app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/orders', orderRouter);
 
 // Express 5 wildcard 404 handler
-app.use('/*splat', notFoundMiddleware);
+app.use('/{*splat}', notFoundMiddleware);
 
 // Global Error Handler
 app.use(errorHandlerMiddleware);
